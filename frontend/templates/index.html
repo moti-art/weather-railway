@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e0f2f1; text-align: center; padding: 50px; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; min-width: 300px; }
+        select, button { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; }
+        button { background-color: #00796b; color: white; cursor: pointer; border: none; }
+        button:hover { background-color: #004d40; }
+        .result { margin-top: 20px; padding: 15px; border-top: 2px solid #eee; text-align: left; }
+        .error { color: #d32f2f; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Dashboard</h1>
+        <form method="POST">
+            <select name="city" required>
+                <option value="" disabled selected>Choose a city...</option>
+                <option value="New York">New York</option>
+                <option value="Sydney">Sydney</option>
+                <option value="Cape Town">Cape Town</option>
+                <option value="Bangkok">Bangkok</option>
+            </select>
+            <button type="submit">Get Weather</button>
+        </form>
+
+        {% if weather %}
+        <div class="result">
+            <h3>Weather in {{ weather.location }}</h3>
+            <p><strong>Temperature:</strong> {{ weather.temperature }}°C</p>
+            <p><strong>Description:</strong> {{ weather.description }}</p>
+            <p><strong>Humidity:</strong> {{ weather.humidity }}%</p>
+            <p><strong>Wind Speed:</strong> {{ weather.wind_speed }} m/s</p>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
