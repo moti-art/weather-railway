@@ -1,0 +1,113 @@
+name: CI/CD Multi-Service Pipeline
+
+on:
+  push:
+    branches: [ "main", "dev" ] # מופעל בדחיפה ל-main או ל-dev
+
+env:
+  DOCKERHUB_OWNER: "motinet" # ⚠️ תשנה פה לשם המשתמש המדויק שלך ב-Docker Hub
+  HELM_REPO: "moti-art/weather-gitops" # ⚠️ תשנה פה לנתיב המדויק של רפוזיטורי ה-Helm שלך
+
+jobs:
+  detect-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/actions/checkout@v4
+        with:
+          fetch-depth: 0 # מביא את כל ההיסטוריה כדי שנוכל לזהות אילו קבצים השתנו
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # --- בדיקה ובנייה של FRONTEND ---
+      - name: Check if Frontend changed
+        id: check_frontend
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^frontend/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and Push Frontend
+        if: steps.check_frontend.outputs.changed == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_OWNER }}/weather-frontend:${{ github.sha }}
+            ${{ env.DOCKERHUB_OWNER }}/weather-frontend:latest
+
+      # --- בדיקה ובנייה של BACKEND ---
+      - name: Check if Backend changed
+        id: check_backend
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^backend/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and Push Backend
+        if: steps.check_backend.outputs.changed == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_OWNER }}/weather-backend:${{ github.sha }}
+            ${{ env.DOCKERHUB_OWNER }}/weather-backend:latest
+
+      # --- בדיקה ובנייה של TRACKER ---
+      - name: Check if Tracker changed
+        id: check_tracker
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^tracker/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and Push Tracker
+        if: steps.check_tracker.outputs.changed == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./tracker
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_OWNER }}/weather-tracker:${{ github.sha }}
+            ${{ env.DOCKERHUB_OWNER }}/weather-tracker:latest
+
+      # --- שלב עדכון ה-HELM CHART REPO ---
+      - name: Update Helm Chart Manifest
+        if: always() # ירוץ ויעדכן את ה-Helm אם לפחות שירות אחד נבנה בהצלחה
+        run: |
+          # שיבוט של רפוזיטורי ה-Helm באמצעות ה-Token שייצרנו
+          git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ env.HELM_REPO }}.git helm-repo
+          cd helm-repo/charts/weather-app
+          
+          # הגדרת שם קובץ הערכים לפי הבראנץ' (dev או main/prod)
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            VALUES_FILE="values-prod.yaml"
+          else
+            VALUES_FILE="values-dev.yaml"
+          fi
+          
+          echo "Updating $VALUES_FILE with new images tagged with ${{ github.sha }}"
+          
+          # עדכון הטאגים בקובץ ה-Values באמצעות sed (אם השירות נבנה)
+          if [ "${{ steps.check_frontend.outputs.changed }}" = "true" ]; then
+            sed -i "s|frontend_tag:.*|frontend_tag: \"${{ github.sha }}\"|g" $VALUES_FILE
+          fi
+          if [ "${{ steps.check_backend.outputs.changed }}" = "true" ]; then
+            sed -i "s|backend_tag:.*|backend_tag: \"${{ github.sha }}\"|g" $VALUES_FILE
+          fi
+          if [ "${{ steps.check_tracker.outputs.changed }}" = "true" ]; then
+            sed -i "s|tracker_tag:.*|tracker_tag: \"${{ github.sha }}\"|g" $VALUES_FILE
+          fi
+          
+          # דחיפת השינויים חזרה ל-Git של ה-Helm
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add $VALUES_FILE
+          git diff-index --quiet HEAD || git commit -m "Auto-update image tags to ${{ github.sha }} [skip ci]"
+          git push origin main
