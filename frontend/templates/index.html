@@ -3,43 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather Dashboard</title>
+    <title>Weather Dashboard Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e0f2f1; text-align: center; padding: 50px; }
-        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; min-width: 300px; }
-        select, button { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; }
-        button { background-color: #00796b; color: white; cursor: pointer; border: none; }
-        button:hover { background-color: #004d40; }
-        .result { margin-top: 20px; padding: 15px; border-top: 2px solid #eee; text-align: left; }
-        .error { color: #d32f2f; font-weight: bold; }
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-content: center;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 
+                        0 0 50px rgba(79, 172, 254, 0.1);
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        h1 i {
+            margin-right: 10px;
+            color: var(--primary);
+            -webkit-text-fill-color: initial;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        select {
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #0f172a;
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+        }
+
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        button {
+            padding: 16px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            color: #0f172a;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.6);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .result {
+            margin-top: 35px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .city-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .weather-card {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 16px;
+            border-radius: 16px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .weather-card i {
+            color: var(--primary);
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .weather-card span {
+            font-size: 12px;
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .weather-card strong {
+            font-size: 1.1rem;
+            color: #fff;
+        }
+
+        .weather-card.full-width {
+            grid-column: span 2;
+            text-transform: capitalize;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            margin-top: 20px;
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Weather Dashboard</h1>
+        <h1><i class="fa-solid fa-cloud-sun-rain"></i>Weather Station</h1>
+        
         <form method="POST">
-            <select name="city" required>
-                <option value="" disabled selected>Choose a city...</option>
-                <option value="New York">New York</option>
-                <option value="Sydney">Sydney</option>
-                <option value="Cape Town">Cape Town</option>
-                <option value="Bangkok">Bangkok</option>
-            </select>
-            <button type="submit">Get Weather</button>
+            <div class="form-group">
+                <select name="city" required>
+                    <option value="" disabled selected>Select Target City...</option>
+                    <option value="New York">New York</option>
+                    <option value="Sydney">Sydney</option>
+                    <option value="Cape Town">Cape Town</option>
+                    <option value="Bangkok">Bangkok</option>
+                </select>
+                <button type="submit"><i class="fa-solid fa-satellite-dish"></i> Fetch Metrics</button>
+            </div>
         </form>
 
         {% if weather %}
         <div class="result">
-            <h3>Weather in {{ weather.location }}</h3>
-            <p><strong>Temperature:</strong> {{ weather.temperature }}°C</p>
-            <p><strong>Description:</strong> {{ weather.description }}</p>
-            <p><strong>Humidity:</strong> {{ weather.humidity }}%</p>
-            <p><strong>Wind Speed:</strong> {{ weather.wind_speed }} m/s</p>
+            <div class="city-title">
+                <i class="fa-solid fa-location-dot" style="color: var(--secondary);"></i>
+                {{ weather.location }}
+            </div>
+            
+            <div class="weather-grid">
+                <div class="weather-card">
+                    <i class="fa-solid fa-temperature-half"></i>
+                    <span>Temperature</span>
+                    <strong>{{ weather.temperature }}°C</strong>
+                </div>
+                
+                <div class="weather-card">
+                    <i class="fa-solid fa-droplet"></i>
+                    <span>Humidity</span>
+                    <strong>{{ weather.humidity }}%</strong>
+                </div>
+                
+                <div class="weather-card">
+                    <i class="fa-solid fa-wind"></i>
+                    <span>Wind Speed</span>
+                    <strong>{{ weather.wind_speed }} m/s</strong>
+                </div>
+
+                <div class="weather-card">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Condition</span>
+                    <strong>{{ weather.description }}</strong>
+                </div>
+            </div>
         </div>
         {% endif %}
 
         {% if error %}
-        <p class="error">{{ error }}</p>
+        <div class="error">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            {{ error }}
+        </div>
         {% endif %}
     </div>
 </body>
